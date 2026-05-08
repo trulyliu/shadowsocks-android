@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="subscription_url_title">订阅地址</string>
+    <string name="subscription_url_summary_configured">已配置</string>
+    <string name="subscription_url_summary_empty">未配置</string>
     <string name="subscription_empty_hint">请先设置订阅地址</string>
 </resources>

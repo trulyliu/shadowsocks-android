@@ -136,6 +136,14 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
         stats = findPreference(Key.controlStats)!!
         controlImport = findPreference(Key.controlImport)!!
         controlSubscriptionUpdate = findPreference(Key.controlSubscriptionUpdate)!!
+        // Mask the URL in the preference summary so user/pass / token query strings
+        // aren't shouted at anyone glancing at the TV. Full URL still appears in the
+        // edit dialog when the user explicitly opens it.
+        findPreference<EditTextPreference>("subscription")?.summaryProvider =
+                Preference.SummaryProvider<EditTextPreference> { pref ->
+                    if (pref.text.isNullOrEmpty()) getString(R.string.subscription_url_summary_empty)
+                    else getString(R.string.subscription_url_summary_configured)
+                }
         SubscriptionService.idle.observe(this) { idle ->
             if (idle && subscriptionPending) {
                 subscriptionPending = false

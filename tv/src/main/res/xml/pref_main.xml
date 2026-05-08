@@ -17,8 +17,7 @@
     <EditTextPreference
         app:key="subscription"
         app:title="@string/subscription_url_title"
-        app:dialogTitle="@string/subscription_url_title"
-        app:useSimpleSummaryProvider="true"/>
+        app:dialogTitle="@string/subscription_url_title"/>
     <Preference
         app:key="control.subscriptionUpdate"
         app:title="@string/update_subscription"/>
