@@ -67,6 +67,8 @@ object Core {
     lateinit var app: Application
         @VisibleForTesting set
     lateinit var configureIntent: (Context) -> PendingIntent
+    var enableFirebase: Boolean = true
+        private set
     val activity by lazy { app.getSystemService<ActivityManager>()!! }
     val clipboard by lazy { app.getSystemService<ClipboardManager>()!! }
     val connectivity by lazy { app.getSystemService<ConnectivityManager>()!! }
@@ -97,8 +99,9 @@ object Core {
         return result
     }
 
-    fun init(app: Application, configureClass: KClass<out Any>) {
+    fun init(app: Application, configureClass: KClass<out Any>, enableFirebase: Boolean = true) {
         this.app = app
+        this.enableFirebase = enableFirebase
         this.configureIntent = {
             PendingIntent.getActivity(it, 0, Intent(it, configureClass.java)
                     .setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT), PendingIntent.FLAG_IMMUTABLE)
@@ -115,16 +118,21 @@ object Core {
 
         // overhead of debug mode is minimal: https://github.com/Kotlin/kotlinx.coroutines/blob/f528898/docs/debugging.md#debug-mode
         System.setProperty(DEBUG_PROPERTY_NAME, DEBUG_PROPERTY_VALUE_ON)
-        FirebaseApp.initializeApp(deviceStorage)  // multiple processes needs manual set-up
-        FirebaseCrashlytics.getInstance().setCustomKey("build", Build.DISPLAY)
+        if (enableFirebase) {
+            FirebaseApp.initializeApp(deviceStorage)  // multiple processes needs manual set-up
+            FirebaseCrashlytics.getInstance().setCustomKey("build", Build.DISPLAY)
+        }
         Timber.plant(object : Timber.DebugTree() {
             override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
                 if (t == null) {
                     if (priority != Log.DEBUG || BuildConfig.DEBUG) Log.println(priority, tag, message)
-                    FirebaseCrashlytics.getInstance().log("${"XXVDIWEF".getOrElse(priority) { 'X' }}/$tag: $message")
+                    if (enableFirebase) {
+                        FirebaseCrashlytics.getInstance().log(
+                            "${"XXVDIWEF".getOrElse(priority) { 'X' }}/$tag: $message")
+                    }
                 } else {
                     if (priority >= Log.WARN || priority == Log.DEBUG) Log.println(priority, tag, message)
-                    if (priority >= Log.INFO) FirebaseCrashlytics.getInstance().recordException(t)
+                    if (enableFirebase && priority >= Log.INFO) FirebaseCrashlytics.getInstance().recordException(t)
                 }
             }
         })

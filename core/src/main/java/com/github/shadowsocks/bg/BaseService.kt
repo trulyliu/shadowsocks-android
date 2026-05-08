@@ -277,8 +277,10 @@ object BaseService {
             // channge the state
             data.changeState(State.Stopping)
             GlobalScope.launch(Dispatchers.Main.immediate) {
-                FirebaseAnalytics.getInstance(this@Interface as Service).logEvent("stop",
-                    bundleOf(FirebaseAnalytics.Param.METHOD to tag))
+                if (Core.enableFirebase) {
+                    FirebaseAnalytics.getInstance(this@Interface as Service).logEvent("stop",
+                        bundleOf(FirebaseAnalytics.Param.METHOD to tag))
+                }
                 data.connectingJob?.cancelAndJoin() // ensure stop connecting first
                 this@Interface as Service
                 // we use a coroutineScope here to allow clean-up in parallel
@@ -353,8 +355,10 @@ object BaseService {
             }
 
             data.notification = createNotification(profile.formattedName)
-            FirebaseAnalytics.getInstance(this).logEvent("start",
-                bundleOf(FirebaseAnalytics.Param.METHOD to tag))
+            if (Core.enableFirebase) {
+                FirebaseAnalytics.getInstance(this).logEvent("start",
+                    bundleOf(FirebaseAnalytics.Param.METHOD to tag))
+            }
 
             data.changeState(State.Connecting)
             data.connectingJob = GlobalScope.launch(Dispatchers.Main.immediate) {

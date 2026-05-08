@@ -202,7 +202,7 @@ class MainActivity : AppCompatActivity(), ShadowsocksConnection.Callback, OnPref
                 }
                 R.id.globalSettings -> displayFragment(GlobalSettingsFragment())
                 R.id.about -> {
-                    FirebaseAnalytics.getInstance(this).logEvent("about", null)
+                    if (Core.enableFirebase) FirebaseAnalytics.getInstance(this).logEvent("about", null)
                     displayFragment(AboutFragment())
                 }
                 R.id.faq -> {
