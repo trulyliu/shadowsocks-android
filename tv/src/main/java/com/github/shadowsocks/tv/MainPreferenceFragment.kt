@@ -37,6 +37,7 @@ import com.github.shadowsocks.aidl.IShadowsocksService
 import com.github.shadowsocks.aidl.ShadowsocksConnection
 import com.github.shadowsocks.aidl.TrafficStats
 import com.github.shadowsocks.bg.BaseService
+import com.github.shadowsocks.database.Profile
 import com.github.shadowsocks.database.ProfileManager
 import com.github.shadowsocks.net.HttpsTest
 import com.github.shadowsocks.preference.DataStore
@@ -155,8 +156,16 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
             if (idle && subscriptionPending) {
                 subscriptionPending = false
                 populateProfiles()
-                Toast.makeText(requireContext(),
-                    R.string.service_subscription_finishing, Toast.LENGTH_SHORT).show()
+                // SubscriptionService marks downloaded profiles Active and stale ones
+                // Obsolete. A wrong URL produces 0 Active subscription profiles.
+                val active = ProfileManager.getAllProfiles()?.count {
+                    it.subscription == Profile.SubscriptionStatus.Active
+                } ?: 0
+                val msg = if (active > 0)
+                    getString(R.string.subscription_synced, active)
+                else
+                    getString(R.string.subscription_failed)
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
             }
         }
 
@@ -274,9 +283,7 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
             // Immediate visible feedback — TVs may suppress the SubscriptionService
             // notification (POST_NOTIFICATIONS off on API 33+), leaving the user
             // unsure whether the click registered.
-            Toast.makeText(context,
-                getString(R.string.service_subscription_working, 0, urls.size()),
-                Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.subscription_syncing, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             subscriptionPending = false
             Timber.w(e, "Failed to start SubscriptionService")

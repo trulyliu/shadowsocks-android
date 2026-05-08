@@ -4,4 +4,7 @@
     <string name="subscription_url_summary_configured">Configured</string>
     <string name="subscription_url_summary_empty">Not configured</string>
     <string name="subscription_empty_hint">Please set a subscription URL first</string>
+    <string name="subscription_syncing">Syncing subscription…</string>
+    <string name="subscription_synced">Synced %d profile(s) from subscription</string>
+    <string name="subscription_failed">Subscription sync failed — check URL or network</string>
 </resources>

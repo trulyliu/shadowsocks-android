@@ -4,4 +4,7 @@
     <string name="subscription_url_summary_configured">已配置</string>
     <string name="subscription_url_summary_empty">未配置</string>
     <string name="subscription_empty_hint">请先设置订阅地址</string>
+    <string name="subscription_syncing">正在同步订阅…</string>
+    <string name="subscription_synced">已同步 %d 个配置</string>
+    <string name="subscription_failed">同步失败 — 请检查 URL 或网络</string>
 </resources>
