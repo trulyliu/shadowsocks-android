@@ -24,6 +24,13 @@ android {
         applicationId = "com.github.shadowsocks.tv"
         buildConfigField("boolean", "FULLSCREEN", "false")
         buildConfigField("boolean", "ENABLE_FIREBASE", "true")
+        // Optional: pre-populate the TV subscription URL on first launch.
+        // Set DEFAULT_SUBSCRIPTION_URL in ~/.gradle/gradle.properties or pass -P at build time.
+        // Empty by default. Note: value is interpolated raw — don't put `"` or `\` in the URL.
+        buildConfigField(
+            "String", "DEFAULT_SUBSCRIPTION_URL",
+            "\"${findProperty("DEFAULT_SUBSCRIPTION_URL")?.toString().orEmpty()}\""
+        )
     }
     signingConfigs {
         create("cntv") {

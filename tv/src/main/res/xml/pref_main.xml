@@ -14,6 +14,14 @@
     <Preference
         app:key="control.import"
         app:title="@string/action_replace_file"/>
+    <EditTextPreference
+        app:key="subscription"
+        app:title="@string/subscription_url_title"
+        app:dialogTitle="@string/subscription_url_title"
+        app:useSimpleSummaryProvider="true"/>
+    <Preference
+        app:key="control.subscriptionUpdate"
+        app:title="@string/update_subscription"/>
     <Preference
         app:key="control.export"
         app:title="@string/action_export_file"/>

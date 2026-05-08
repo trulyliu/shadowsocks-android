@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subscription_url_title">Subscription URL</string>
+    <string name="subscription_empty_hint">Please set a subscription URL first</string>
+</resources>

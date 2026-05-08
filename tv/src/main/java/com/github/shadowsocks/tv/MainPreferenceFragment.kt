@@ -42,15 +42,21 @@ import com.github.shadowsocks.net.HttpsTest
 import com.github.shadowsocks.preference.DataStore
 import com.github.shadowsocks.preference.EditTextPreferenceModifiers
 import com.github.shadowsocks.preference.OnPreferenceDataStoreChangeListener
+import com.github.shadowsocks.subscription.Subscription
+import com.github.shadowsocks.subscription.SubscriptionService
 import com.github.shadowsocks.utils.*
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import timber.log.Timber
+import java.net.MalformedURLException
+import java.net.URL
 
 class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksConnection.Callback,
         OnPreferenceDataStoreChangeListener {
     private lateinit var fab: ListPreference
     private lateinit var stats: Preference
     private lateinit var controlImport: Preference
+    private lateinit var controlSubscriptionUpdate: Preference
+    private var subscriptionPending = false
     private lateinit var serviceMode: Preference
     private lateinit var shareOverLan: Preference
     private lateinit var portProxy: EditTextPreference
@@ -97,6 +103,7 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
         this.state = state
         val stopped = state == BaseService.State.Stopped
         controlImport.isEnabled = stopped
+        controlSubscriptionUpdate.isEnabled = stopped
         serviceMode.isEnabled = stopped
         shareOverLan.isEnabled = stopped
         portProxy.isEnabled = stopped
@@ -122,11 +129,19 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
         preferenceManager.preferenceDataStore = DataStore.publicStore
         DataStore.initGlobal()
         addPreferencesFromResource(R.xml.pref_main)
+        seedDefaultSubscription()
         setFragmentResultListener(ProfilesDialogFragment::class.java.name) { _, _ -> startService() }
         fab = findPreference(Key.id)!!
         populateProfiles()
         stats = findPreference(Key.controlStats)!!
         controlImport = findPreference(Key.controlImport)!!
+        controlSubscriptionUpdate = findPreference(Key.controlSubscriptionUpdate)!!
+        SubscriptionService.idle.observe(this) { idle ->
+            if (idle && subscriptionPending) {
+                subscriptionPending = false
+                populateProfiles()
+            }
+        }
 
         findPreference<SwitchPreference>(Key.persistAcrossReboot)!!.setOnPreferenceChangeListener { _, value ->
             BootReceiver.enabled = value as Boolean
@@ -198,6 +213,10 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
             startFilesForResult(replaceProfiles)
             true
         }
+        Key.controlSubscriptionUpdate -> {
+            startSubscriptionRefresh()
+            true
+        }
         Key.controlExport -> {
             startFilesForResult(exportProfiles)
             true
@@ -211,6 +230,28 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
             true
         }
         else -> super.onPreferenceTreeClick(preference)
+    }
+
+    private fun seedDefaultSubscription() {
+        if (BuildConfig.DEFAULT_SUBSCRIPTION_URL.isEmpty()) return
+        if (Subscription.instance.urls.size() > 0) return
+        try {
+            Subscription.instance = Subscription().apply {
+                urls.add(URL(BuildConfig.DEFAULT_SUBSCRIPTION_URL))
+            }
+        } catch (e: MalformedURLException) {
+            Timber.w(e, "Invalid DEFAULT_SUBSCRIPTION_URL build config: ${BuildConfig.DEFAULT_SUBSCRIPTION_URL}")
+        }
+    }
+
+    private fun startSubscriptionRefresh() {
+        val context = requireContext()
+        if (Subscription.instance.urls.size() == 0) {
+            Toast.makeText(context, R.string.subscription_empty_hint, Toast.LENGTH_SHORT).show()
+            return
+        }
+        subscriptionPending = true
+        context.startService(Intent(context, SubscriptionService::class.java))
     }
 
     private fun startFilesForResult(launcher: ActivityResultLauncher<String>) {

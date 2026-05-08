@@ -70,6 +70,7 @@ object Key {
     const val controlStats = "control.stats"
     const val controlImport = "control.import"
     const val controlExport = "control.export"
+    const val controlSubscriptionUpdate = "control.subscriptionUpdate"
     const val about = "about"
     const val aboutOss = "about.ossLicenses"
 }
