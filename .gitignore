@@ -12,3 +12,7 @@ release/
 # release apks
 *.apk
 .DS_Store
+
+# Local v2ray-plugin APK staging area for resign-v2ray-plugin.sh.
+# Holds upstream APKs to re-sign and the resigned outputs — never committed.
+v2ray/
