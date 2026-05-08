@@ -109,6 +109,25 @@ Some Chinese smart-TV vendors blocklist `com.github.shadowsocks.tv` by package n
 
 When adding flavor-specific assets / strings / themes for cntv, mirror the `tv/src/freedom/` source-set layout, not `tv/src/main/`.
 
+#### Testing cntv on the Android TV emulator
+
+`./tv-emulator.sh` wraps the AVD lifecycle. One-time:
+
+```bash
+./tv-emulator.sh setup        # downloads system-images;android-34;android-tv;x86 (~1.5 GB)
+./build-cntv-release.sh x86   # cntv-x86 release APK (TV images are x86 or arm64; no x86_64)
+./resign-v2ray-plugin.sh      # if you also want the v2ray plugin installed
+```
+
+Then per test session:
+
+```bash
+./tv-emulator.sh up           # boot + install cntv + install v2ray + launch
+./tv-emulator.sh stop         # adb emu kill when done
+```
+
+The script invokes `sdkmanager`/`avdmanager` with `JAVA_HOME=/opt/android-studio/jbr` because cmdline-tools needs JDK 17+ and system Java is 11. Override via `JAVA_HOME_OVERRIDE=/path/to/jdk` if your Studio install moves. Add `EMU_FLAGS="-no-window"` for headless runs (CI-style).
+
 ## Conventions worth knowing
 
 - Kotlin only for new code; Java interop is preserved in `:plugin` for third-party plugin authors.
