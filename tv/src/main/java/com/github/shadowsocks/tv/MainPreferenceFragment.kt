@@ -128,26 +128,35 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.preferenceDataStore = DataStore.publicStore
         DataStore.initGlobal()
-        addPreferencesFromResource(R.xml.pref_main)
+        // Seed BEFORE addPreferencesFromResource so the EditTextPreference picks up
+        // the default URL on first bind. If we seed after, the preference's text
+        // cache is already "" and the URL only shows after the screen is reloaded.
         seedDefaultSubscription()
+        addPreferencesFromResource(R.xml.pref_main)
         setFragmentResultListener(ProfilesDialogFragment::class.java.name) { _, _ -> startService() }
         fab = findPreference(Key.id)!!
         populateProfiles()
         stats = findPreference(Key.controlStats)!!
         controlImport = findPreference(Key.controlImport)!!
         controlSubscriptionUpdate = findPreference(Key.controlSubscriptionUpdate)!!
-        // Mask the URL in the preference summary so user/pass / token query strings
-        // aren't shouted at anyone glancing at the TV. Full URL still appears in the
-        // edit dialog when the user explicitly opens it.
-        findPreference<EditTextPreference>("subscription")?.summaryProvider =
-                Preference.SummaryProvider<EditTextPreference> { pref ->
-                    if (pref.text.isNullOrEmpty()) getString(R.string.subscription_url_summary_empty)
-                    else getString(R.string.subscription_url_summary_configured)
-                }
+        findPreference<EditTextPreference>("subscription")?.apply {
+            // Mask the URL in the preference summary so user/pass / token query strings
+            // aren't shouted at anyone glancing at the TV. Full URL still appears in the
+            // edit dialog when the user explicitly opens it.
+            summaryProvider = Preference.SummaryProvider<EditTextPreference> { pref ->
+                if (pref.text.isNullOrEmpty()) getString(R.string.subscription_url_summary_empty)
+                else getString(R.string.subscription_url_summary_configured)
+            }
+            // EditText behavior (multi-line wrapping + IME Done action) is configured
+            // by SubscriptionUrlDialogFragment, which MainFragment.onPreferenceDisplayDialog
+            // dispatches to for this preference's "subscription" key.
+        }
         SubscriptionService.idle.observe(this) { idle ->
             if (idle && subscriptionPending) {
                 subscriptionPending = false
                 populateProfiles()
+                Toast.makeText(requireContext(),
+                    R.string.service_subscription_finishing, Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -254,12 +263,25 @@ class MainPreferenceFragment : LeanbackPreferenceFragmentCompat(), ShadowsocksCo
 
     private fun startSubscriptionRefresh() {
         val context = requireContext()
-        if (Subscription.instance.urls.size() == 0) {
+        val urls = Subscription.instance.urls
+        if (urls.size() == 0) {
             Toast.makeText(context, R.string.subscription_empty_hint, Toast.LENGTH_SHORT).show()
             return
         }
         subscriptionPending = true
-        context.startService(Intent(context, SubscriptionService::class.java))
+        try {
+            context.startService(Intent(context, SubscriptionService::class.java))
+            // Immediate visible feedback — TVs may suppress the SubscriptionService
+            // notification (POST_NOTIFICATIONS off on API 33+), leaving the user
+            // unsure whether the click registered.
+            Toast.makeText(context,
+                getString(R.string.service_subscription_working, 0, urls.size()),
+                Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            subscriptionPending = false
+            Timber.w(e, "Failed to start SubscriptionService")
+            Toast.makeText(context, e.readableMessage, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun startFilesForResult(launcher: ActivityResultLauncher<String>) {

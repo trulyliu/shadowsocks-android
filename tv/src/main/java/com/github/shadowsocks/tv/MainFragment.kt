@@ -57,6 +57,14 @@ class MainFragment : LeanbackSettingsFragmentCompat() {
             })
             return true
         }
+        // Long URLs need a wrapping EditText that still treats Enter as Done.
+        if (pref.key == "subscription") {
+            startPreferenceFragment(SubscriptionUrlDialogFragment().apply {
+                arguments = bundleOf(Pair(LeanbackPreferenceDialogFragmentCompat.ARG_KEY, pref.key))
+                setTargetFragment(caller, 0)
+            })
+            return true
+        }
         return super.onPreferenceDisplayDialog(caller, pref)
     }
 
