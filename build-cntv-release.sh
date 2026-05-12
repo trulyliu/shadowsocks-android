@@ -13,6 +13,10 @@
 #   CNTV_KEY_ALIAS          (default: cntv)
 #   CNTV_KEY_PASSWORD       (default: same as CNTV_KEYSTORE_PASSWORD; PKCS12 forces equal)
 #
+# applicationId override (when the default package name gets blocklisted):
+#   CNTV_APPLICATION_ID     (default: com.github.skcoswodahs.tv)
+#   e.g. CNTV_APPLICATION_ID=com.example.toolbox.tv ./build-cntv-release.sh arm64
+#
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -20,7 +24,7 @@ cd "$SCRIPT_DIR"
 
 ABI="${1:-arm64}"
 KEYSTORE="${CNTV_KEYSTORE_FILE:-$HOME/keystores/cntv-release.keystore}"
-EXPECTED_APP_ID="com.github.skcoswodahs.tv"
+EXPECTED_APP_ID="${CNTV_APPLICATION_ID:-com.github.skcoswodahs.tv}"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 info() { echo "--- $*"; }
@@ -49,6 +53,13 @@ case "$ABI" in
                           GRADLE_ARGS+=("-PTARGET_ABI=$ABI");;
     *) fail "Unknown ABI '$ABI' (expected: arm | arm64 | x86 | x86_64 | all)";;
 esac
+
+# Forward applicationId override only when the env var is set, so the gradle
+# default ("com.github.skcoswodahs.tv") still applies for unset builds.
+if [ -n "${CNTV_APPLICATION_ID:-}" ]; then
+    info "applicationId override: $CNTV_APPLICATION_ID"
+    GRADLE_ARGS+=("-PCNTV_APPLICATION_ID=$CNTV_APPLICATION_ID")
+fi
 
 info "Running ./gradlew :tv:assembleCntvRelease ${GRADLE_ARGS[*]:-}"
 ./gradlew :tv:assembleCntvRelease "${GRADLE_ARGS[@]}"

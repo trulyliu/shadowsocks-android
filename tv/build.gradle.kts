@@ -57,7 +57,11 @@ android {
         }
         create("cntv") {
             dimension = "market"
-            applicationId = "com.github.skcoswodahs.tv"
+            // Default disguise package; override per build via -PCNTV_APPLICATION_ID=...
+            // or env CNTV_APPLICATION_ID when a vendor blocklists the default.
+            applicationId = (findProperty("CNTV_APPLICATION_ID") as String?)
+                ?: System.getenv("CNTV_APPLICATION_ID")
+                ?: "com.github.skcoswodahs.tv"
             buildConfigField("boolean", "ENABLE_FIREBASE", "false")
             // Only attach the cntv signingConfig when the keystore is present,
             // so debug builds and CI without credentials still complete.
